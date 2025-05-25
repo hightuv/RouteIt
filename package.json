@@ -1,0 +1,27 @@
+{
+  "name": "routeit",
+  "version": "1.0.0",
+  "description": "A web service for creating, saving, and sharing personalized route plans.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kevin-jwd/RouteIt.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Kevin-jwd/RouteIt/issues"
+  },
+  "homepage": "https://github.com/Kevin-jwd/RouteIt#readme",
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-openapi-validator": "^5.5.3",
+    "swagger-ui-express": "^5.0.1",
+    "yamljs": "^0.3.0"
+  }
+}
