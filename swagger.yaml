@@ -1,0 +1,400 @@
+openapi: 3.0.4
+info:
+  title: Route
+  description: This is RouteIt Server based on the OpenAPI 3.0.
+  version: 1.0.0
+  contact:
+    email: mail@mail.com
+servers:
+  - url: 'http://localhost:8080'
+paths:
+  /auth/login:
+    post:
+      summary: User logins to the service.
+      description: Log in to the service using email and password.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemberWithDetail'
+      responses:
+        '200':
+          description: Successful Operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthApiResponse'
+        '400':
+          description: Invalid email or password.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorApiResponse'
+
+  /auth/register:
+    post:
+      summary: User registers to the service.
+      description: Create a new user account with the provided details.
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemberWithDetail'
+      responses:
+        '201':
+          description: User registration successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthApiResponse'
+        '400':
+          description: Invalid registration information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorApiResponse'
+
+  /members/{id}:
+    get:
+      summary: Find member by ID.
+      description: Retrieve detailed information about a member by their unique ID.
+      operationId: getMember
+      parameters:
+        - name: id
+          in: path
+          description: ID of the member to return.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Member found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberWithoutDetail'
+        '400':
+          description: Invalid member ID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorApiResponse'
+
+  /members/{id}/routes:
+    get:
+      summary: Retrieve routes created by a specific member.
+      description: Returns a list of all routes created by the specified member.
+      operationId: getMemberRoute
+      parameters:
+        - name: id
+          in: path
+          description: ID of the member whose routes are to be fetched.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Routes found for the member.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Route'
+        '400':
+          description: Invalid member ID or unauthorized access.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorApiResponse'
+
+  /places/{id}:
+    get:
+      summary: Find place by ID.
+      description: Retrieve detailed information about a place using its ID.
+      operationId: getPlaceById
+      parameters:
+        - name: id
+          in: path
+          description: ID of the place to return.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Place found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Place'
+        '400':
+          description: Invalid place ID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorApiResponse'
+
+  /routes:
+    get:
+      summary: Get all routes.
+      description: Retrieve a list of routes with optional filtering and pagination.
+      operationId: getRoutes
+      parameters:
+        - name: search
+          in: query
+          description: Keyword for searching
+          required: false
+          schema:
+            type: string
+        - name: tag
+          in: query
+          description: Tag(s) to filter routes by. Multiple tags can be specified.
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+        - name: page
+          in: query
+          description: Page number
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: limit
+          in: query
+          description: Limit of page contents
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: sort
+          in: query
+          description: Sorting criteria
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Routes retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Route'
+        '400':
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorApiResponse'
+
+    post:
+      summary: Create a new route.
+      description: Creates a new route with specified places, tags, and visibility (private/public).
+      operationId: createRoute
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Route'
+      responses:
+        '200':
+          description: Route created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+        '400':
+          description: Invalid route creation request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorApiResponse'
+
+  /routes/{id}:
+    get:
+      summary: Find route by ID.
+      description: Retrieve detailed information about a specific route by its ID.
+      operationId: getRoute
+      parameters:
+        - name: id
+          in: path
+          description: ID of the route to return.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Route found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+        '400':
+          description: Invalid route ID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorApiResponse'
+
+    delete:
+      summary: Delete a route.
+      description: Delete a route by its unique ID.
+      operationId: deleteRoute
+      parameters:
+        - name: id
+          in: path
+          description: The ID of the route to be deleted.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Route deleted successfully.
+        '400':
+          description: Invalid route ID.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorApiResponse'
+
+    put:
+      summary: Update a route by ID.
+      description: Update the details of a specific route using its ID.
+      operationId: updateRoute
+      parameters:
+        - name: id
+          in: path
+          description: The ID of the route to be updated.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Route'
+      responses:
+        '200':
+          description: Route updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Route'
+        '400':
+          description: Invalid route update request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorApiResponse'
+components:
+  schemas:
+    MemberWithDetail:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: mail@mail.com
+        password:
+          type: string
+          format: password
+          example: 1234
+        name: 
+          type: string
+          example: 사용자
+      required:
+        - email
+        - password
+        - name
+
+    MemberWithoutDetail:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: mail@mail.com
+        name: 
+          type: string
+          example: 사용자
+      required:
+        - email
+        - name
+
+    AuthApiResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        name:
+          type: string
+      required:
+        - token
+        - name
+      example:
+        token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+        name: johndoe
+
+    ErrorApiResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+      example:
+        message: 'Bad Request'
+
+    Place:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        mapx:
+          type: integer
+          format: int64
+          example: 311277
+        mapy:
+          type: integer
+          format: int64
+          example: 552097
+    Route:
+      type: object
+      properties:
+        id: 
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 서울 데이트 코스
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        places:
+          type: array
+          items:
+            $ref: '#/components/schemas/Place'
+        isPrivate:
+          type: boolean
+          example: true
