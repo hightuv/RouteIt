@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3000;
 
 // ─── Swagger 설정 ──────────────────────────────
 // swagger.yaml 경로 지정
-const swaggerPath = path.join(__dirname, 'swagger.yaml');
+const swaggerPath = path.join(__dirname, 'openapi.yaml');
 const openAPIDocument = yaml.load(swaggerPath);
 
 // Swagger UI 연결
