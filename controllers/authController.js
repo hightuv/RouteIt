@@ -81,7 +81,10 @@ const register = async (req, res) => {
             [email, password, name]
         );
 
-        return res.status(StatusCodes.CREATED).json({ email, name });
+        return res.status(StatusCodes.CREATED).json({
+            token: "token",
+            name: name,
+        });
     } catch (err) {
         console.log(`INTERNAL_SERVER_ERROR: ${err}`);
         return res
