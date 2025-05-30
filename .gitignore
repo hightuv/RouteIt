@@ -1,0 +1,9 @@
+node_modules/
+
+*.sql
+
+.env
+
+mariadb.js
+
+demo/
