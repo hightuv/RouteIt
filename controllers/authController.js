@@ -12,6 +12,7 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
+        console.log("Bad Request: 누락된 필드가 있습니다.");
         return res
             .status(StatusCodes.BAD_REQUEST)
             .json({ message: "Bad Request" });
@@ -21,16 +22,17 @@ const login = async (req, res) => {
         const results = await query("SELECT * FROM member WHERE email = ?", [
             email,
         ]);
-        const loginUser = results[0];
+        const loginMember = results[0];
 
-        if (!loginUser || loginUser.password !== password) {
+        if (!loginMember || loginMember.password !== password) {
+            console.log("Unauthorized: 로그인 실패");
             return res
-                .status(StatusCodes.BAD_REQUEST)
+                .status(StatusCodes.UNAUTHORIZED)
                 .json({ message: "Bad Request" });
         }
 
         const token = jwt.sign(
-            { user_id: loginUser.id, email: loginUser.email },
+            { user_id: loginMember.id, email: loginMember.email },
             process.env.PRIVATE_KEY,
             { expiresIn: "30m" }
         );
@@ -43,13 +45,14 @@ const login = async (req, res) => {
 
         return res.status(StatusCodes.OK).json({
             token: token,
-            name: loginUser.name,
+            name: loginMember.name,
         });
+        
     } catch (err) {
-        console.error(err);
+        console.log(`INTERNAL_SERVER_ERROR: ${err}`);
         return res
             .status(StatusCodes.INTERNAL_SERVER_ERROR)
-            .json({ message: "Server Error" });
+            .json({ message: "Bad Request" });
     }
 };
 
@@ -70,10 +73,10 @@ const register = async (req, res) => {
             email,
         ]);
         if (results.length > 0) {
-            console.log("Bad Request: 이미 존재하는 이메일입니다.");
+            console.log("CONFLICT: 이미 존재하는 이메일입니다.");
             return res
-                .status(StatusCodes.BAD_REQUEST)
-                .json({ message: "Email already exists" });
+                .status(StatusCodes.CONFLICT)
+                .json({ message: "Bad Request" });
         }
 
         await query(
@@ -88,8 +91,8 @@ const register = async (req, res) => {
     } catch (err) {
         console.log(`INTERNAL_SERVER_ERROR: ${err}`);
         return res
-            .status(StatusCodes.BAD_REQUEST)
-            .json({ message: "BAD_REQUEST" });
+            .status(StatusCodes.INTERNAL_SERVER_ERROR)
+            .json({ message: "Bad Request" });
     }
 };
 
