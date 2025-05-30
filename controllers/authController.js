@@ -31,22 +31,7 @@ const login = async (req, res) => {
                 .json({ message: "Bad Request" });
         }
 
-        const token = jwt.sign(
-            { user_id: loginMember.id, email: loginMember.email },
-            process.env.PRIVATE_KEY,
-            { expiresIn: "30m" }
-        );
-
-        res.cookie("token", token, {
-            httpOnly: true,
-            secure: true,
-            maxAge: 1000 * 60 * 60 * 24,
-        });
-
-        return res.status(StatusCodes.OK).json({
-            token: token,
-            name: loginMember.name,
-        });
+        return generateTokenAndRespond(res, loginMember);
         
     } catch (err) {
         console.log(`INTERNAL_SERVER_ERROR: ${err}`);
@@ -84,10 +69,13 @@ const register = async (req, res) => {
             [email, password, name]
         );
 
-        return res.status(StatusCodes.CREATED).json({
-            token: "token",
+        const newMember = {
+            id: results.insertId,
+            email: email,
             name: name,
-        });
+        };
+
+        return generateTokenAndRespond(res, newMember, StatusCodes.CREATED);
     } catch (err) {
         console.log(`INTERNAL_SERVER_ERROR: ${err}`);
         return res
@@ -95,5 +83,26 @@ const register = async (req, res) => {
             .json({ message: "Bad Request" });
     }
 };
+
+
+// ─── 토큰 생성 및 응답 처리 함수 ─────────────────────
+const generateTokenAndRespond = (res, user, statusCode = StatusCodes.OK) => {
+    const token = jwt.sign(
+        { user_id: user.id, email: user.email },
+        process.env.PRIVATE_KEY,
+        { expiresIn: "30m" }
+    );
+
+    res.cookie("token", token, {
+        httpOnly: true,
+        secure: true,
+        maxAge: 1000 * 60 * 30,
+    });
+
+    return res.status(statusCode).json({
+        token: token,
+        name: user.name,
+    });
+}
 
 module.exports = { login, register };
