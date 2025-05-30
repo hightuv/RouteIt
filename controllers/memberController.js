@@ -9,6 +9,7 @@ const getMember = async (req, res) => {
     try {
         const memberId = parseInt(req.params.id, 10);
         if (isNaN(memberId)) {
+          console.log("Bad Request: 잘못된 접근입니다.");
             return res
                 .status(StatusCodes.BAD_REQUEST)
                 .json({ message: "Bad Request" });
@@ -20,6 +21,7 @@ const getMember = async (req, res) => {
         );
 
         if (results.length === 0) {
+          console.log("NOT_FOUND: 해당 사용자를 찾을 수 없습니다.");
             return res
                 .status(StatusCodes.NOT_FOUND)
                 .json({ message: "Bad Request" });
@@ -31,7 +33,7 @@ const getMember = async (req, res) => {
             name: member.name,
         });
     } catch (err) {
-        console.error(err);
+        console.log(`INTERNAL_SERVER_ERROR: ${err}`);
         return res
             .status(StatusCodes.INTERNAL_SERVER_ERROR)
             .json({ message: "Bad Request" });
@@ -44,6 +46,7 @@ const getMemberRoute = async (req, res) => {
 
     // ERROR: memberId가 숫자가 아니면 Bad Request 응답
   if(Number.isNaN(memberId)){
+    console.log("Bad Request: 잘못된 접근입니다.");
     return res.status(StatusCodes.BAD_REQUEST).json({ message: "Bad Request" });
   }
 
@@ -89,7 +92,7 @@ const getMemberRoute = async (req, res) => {
     return res.status(StatusCodes.OK).json(result);
   } catch (error) {
     // ERROR: 서버 오류 발생 시 INTERNAL_SERVER_ERROR 응답
-    console.error(error);
+    console.log(`INTERNAL_SERVER_ERROR: ${error}`);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: "Internal Server Error" });
   }
 };
