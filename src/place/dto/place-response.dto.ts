@@ -22,7 +22,10 @@ export class PlaceResponseDto {
 
   userRatingCount: number;
 
-  review?: string;
+  reviews?: {
+    rating: number;
+    text: string;
+  }[];
 
   nationalPhoneNumber: string;
 }
