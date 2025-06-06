@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Place } from './entities/place.entity';
@@ -22,8 +22,11 @@ export class PlaceService {
   }
 
   // id 기반 장소 상세 조회 (DB 저장 포함)
-  async getPlaceDetails(id: string): Promise<Place> {
-    let place = await this.placeRepository.findOne({ where: { id } });
+  async getPlaceDetails(id: string, manager?: EntityManager): Promise<Place> {
+    const placeRepository =
+      manager?.getRepository(Place) || this.placeRepository;
+
+    let place = await placeRepository.findOne({ where: { id } });
     if (place) {
       console.log('DB에서 장소 조회');
       return place;
@@ -33,7 +36,7 @@ export class PlaceService {
 
     place = mapGoogleDtoToPlaceEntity(data);
 
-    await this.placeRepository.save(place);
+    await placeRepository.save(place);
     console.log('DB에 장소 저장');
     return place;
   }
