@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { PlaceResponseDto } from '../place/dto/place-response.dto';
 import { plainToInstance } from 'class-transformer';
-import { Place } from 'src/place/entities/place.entity';
 
+// 검색어에 해당하는 장소 검색 함수
 export async function searchPlacesFromGoogle(
   searchText: string,
 ): Promise<unknown> {
@@ -21,6 +21,7 @@ export async function searchPlacesFromGoogle(
   return response.data;
 }
 
+// 특정 장소의 상세 정보 검색 함수
 export async function fetchPlaceDetailsFromGoogle(
   id: string,
 ): Promise<PlaceResponseDto> {
@@ -45,30 +46,4 @@ export async function fetchPlaceDetailsFromGoogle(
 
   const response = await axios.get(url, { headers });
   return plainToInstance(PlaceResponseDto, response.data);
-}
-
-export function mapGoogleDtoToPlaceEntity(dto: PlaceResponseDto): Place {
-  const displayName = dto.displayName?.text || '';
-  const primaryTypeDisplayName = dto.primaryTypeDisplayName?.text || '';
-  const weekdayDescriptions =
-    dto.regularOpeningHours?.weekdayDescriptions || [];
-  const photo = dto.photos?.[0]?.googleMapsUri || '';
-  const reviews = dto.reviews || [];
-  const firstFiveReviews = reviews.slice(0, 5).map((r) => ({
-    rating: r.rating,
-    text: r.text || '',
-  }));
-
-  const place = new Place();
-  place.id = dto.id;
-  place.displayName = displayName;
-  place.formattedAddress = dto.formattedAddress || '';
-  place.primaryTypeDisplayName = primaryTypeDisplayName;
-  place.photos = photo ? [photo] : [];
-  place.weekdayDescriptions = weekdayDescriptions;
-  place.userRatingCount = dto.userRatingCount ?? 0;
-  place.reviews = firstFiveReviews;
-  place.nationalPhoneNumber = dto.nationalPhoneNumber || '';
-
-  return place;
 }

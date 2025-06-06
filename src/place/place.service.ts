@@ -7,6 +7,7 @@ import {
   fetchPlaceDetailsFromGoogle,
   searchPlacesFromGoogle,
 } from '../util/googlePlacesApi.util';
+import { mapGoogleDtoToPlaceEntity } from 'src/util/placeMapper.util';
 
 @Injectable()
 export class PlaceService {
@@ -30,28 +31,7 @@ export class PlaceService {
 
     const data: PlaceResponseDto = await fetchPlaceDetailsFromGoogle(id);
 
-    const displayName = data.displayName?.text || '';
-    const primaryTypeDisplayName = data.primaryTypeDisplayName?.text || '';
-    const weekdayDescriptions =
-      data.regularOpeningHours?.weekdayDescriptions || [];
-    const photo = data.photos?.[0]?.googleMapsUri || '';
-    const reviews = data.reviews || [];
-    const firstFiveReviews = reviews.slice(0, 5).map((r) => ({
-      rating: r.rating,
-      text: r.text || '',
-    }));
-
-    place = this.placeRepository.create({
-      id: data.id,
-      displayName,
-      formattedAddress: data.formattedAddress || '',
-      primaryTypeDisplayName,
-      photos: photo ? [photo] : [],
-      weekdayDescriptions,
-      userRatingCount: data.userRatingCount ?? 0,
-      reviews: firstFiveReviews,
-      nationalPhoneNumber: data.nationalPhoneNumber || '',
-    });
+    place = mapGoogleDtoToPlaceEntity(data);
 
     await this.placeRepository.save(place);
     console.log('DB에 장소 저장');
