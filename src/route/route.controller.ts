@@ -22,13 +22,17 @@ export class RouteController {
   }
 
   @Get()
-  findAll(@Query('searchText') searchText: string) {
-    return this.routeService.findAll(searchText);
+  findRoutes(
+    @Query('searchText') searchText?: string,
+    @Query('tagIds') tagIds?: string,
+  ) {
+    const tagIdArray = tagIds ? tagIds.split(',').map(Number) : undefined;
+    return this.routeService.findBySearchText(searchText, tagIdArray);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.routeService.findOne(+id);
+  findRoute(@Param('id') id: string) {
+    return this.routeService.findRoute(+id);
   }
 
   @Patch(':id')
