@@ -1,6 +1,7 @@
-import { Column, PrimaryColumn, Entity } from 'typeorm';
+import { RoutePlace } from 'src/route/entities/route-place.entity';
+import { Column, PrimaryColumn, Entity, OneToMany } from 'typeorm';
 
-@Entity('places')
+@Entity()
 export class Place {
   // 장소 고유 ID
   @PrimaryColumn()
@@ -40,4 +41,7 @@ export class Place {
   // 국가 전화번호
   @Column()
   nationalPhoneNumber: string;
+
+  @OneToMany(() => RoutePlace, (routePlace) => routePlace.place)
+  routePlaces: RoutePlace[];
 }
