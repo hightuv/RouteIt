@@ -19,11 +19,11 @@ export class Place {
   primaryTypeDisplayName: string;
 
   // 사진 URL 배열
-  @Column('simple-array', { nullable: true })
+  @Column('json', { nullable: true })
   photos: string[];
 
   // 영업시간 요일별 배열
-  @Column('simple-array', { nullable: true })
+  @Column('json', { nullable: true })
   weekdayDescriptions: string[];
 
   // 사용자 평점
@@ -31,8 +31,11 @@ export class Place {
   userRatingCount: number;
 
   // 리뷰
-  @Column('text', { nullable: true })
-  review: string;
+  @Column('json', { nullable: true })
+  reviews: {
+    rating: number;
+    text: string;
+  }[];
 
   // 국가 전화번호
   @Column()
