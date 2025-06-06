@@ -1,9 +1,18 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { RouteService } from './route.service';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
 
-@Controller('route')
+@Controller('routes')
 export class RouteController {
   constructor(private readonly routeService: RouteService) {}
 
@@ -13,8 +22,8 @@ export class RouteController {
   }
 
   @Get()
-  findAll() {
-    return this.routeService.findAll();
+  findAll(@Query('searchText') searchText: string) {
+    return this.routeService.findAll(searchText);
   }
 
   @Get(':id')
