@@ -73,11 +73,11 @@ export class RouteService {
 
       await queryRunner.manager.save(route);
 
-      const routePlaces = placeIds.map((placeId, idx) => {
-        const place = places.find((p) => p.id === placeId); // placeId 갱신 관련 이슈
+      // getPlaceDetails는 항상 갱신된 placeId를 보장
+      const routePlaces = places.map((place, idx) => {
         return queryRunner.manager.create(RoutePlace, {
           route,
-          place, // undefined (route정보에 undefined)
+          place, // 항상 최신 placeId
           position: idx + 1,
         });
       });
@@ -186,6 +186,7 @@ export class RouteService {
           route: { id: route.id },
         });
 
+        // getPlaceDetails는 항상 갱신된 placeId를 보장
         const places = await Promise.all(
           updateRouteDto.placeIds.map((placeId) =>
             this.placeService.getPlaceDetails(placeId, queryRunner.manager),
@@ -196,11 +197,10 @@ export class RouteService {
           throw new NotFoundException('Some places not found');
         }
 
-        const newRoutePlaces = updateRouteDto.placeIds.map((placeId, idx) => {
-          const place = places.find((p) => p.id === placeId);
+        const newRoutePlaces = places.map((place, idx) => {
           return queryRunner.manager.create(RoutePlace, {
             route,
-            place,
+            place, // 최신 placeId가 반영됨
             position: idx + 1,
           });
         });
