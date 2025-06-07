@@ -11,6 +11,7 @@ import { RoutePlace } from './entities/route-place.entity';
 import { plainToInstance } from 'class-transformer';
 import { PlaceResponseDto } from 'src/place/dto/place-response.dto';
 import { PlaceService } from 'src/place/place.service';
+import { Place } from 'src/place/entities/place.entity';
 
 @Injectable()
 export class RouteService {
@@ -33,6 +34,7 @@ export class RouteService {
   ) {}
 
   async create(createRouteDto: CreateRouteDto) {
+    console.log('create');
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -94,53 +96,94 @@ export class RouteService {
   }
 
   // 검색어 및 태그 (지금은 검색어만 구현)
-  async findBySearchText(
+  async findRoutes(
     searchText?: string,
     tagIds?: number[],
   ): Promise<RouteResponseDto[]> {
-    // 1. tagIds에 해당하는 Route id만 먼저 조회
-    const routeIds = await this.routeRepository
-      .createQueryBuilder('route')
-      .leftJoin('route.tags', 'tag')
-      .where('tag.id IN (:...tagIds)', { tagIds })
-      .getMany()
-      .then((routes) => routes.map((r) => r.id));
+    console.log('findRoutes');
+    // 1. routeIds: tagIds가 있을 때만 Route-Tag 조인으로 id 추출, 없으면 undefined
+    let routeIds: number[] | undefined = undefined;
 
-    // 2. 해당 Route id로 전체 태그 포함 조회
+    if (tagIds && tagIds.length > 0) {
+      // tagIds 조건이 있으면, 해당 태그가 달린 Route id만 추출
+      const qb = this.routeRepository
+        .createQueryBuilder('route')
+        .leftJoin('route.tags', 'tag')
+        .select('route.id', 'id')
+        .where('tag.id IN (:...tagIds)', { tagIds });
+
+      // searchText가 있으면 name 조건도 추가
+      if (searchText) {
+        qb.andWhere('route.name LIKE :searchText', {
+          searchText: `%${searchText}%`,
+        });
+      }
+
+      // getRawMany는 { id: number }[] 반환
+      const rows: { id: number }[] = await qb.getRawMany();
+      routeIds = rows.map((row) => row.id);
+
+      // 조건에 맞는 Route가 없으면 빈 배열 반환
+      if (routeIds.length === 0) {
+        return [];
+      }
+    }
+
+    // 2. Route 전체 정보 조회
+    // - tagIds가 있으면 routeIds로 필터링
+    // - tagIds 없고 searchText만 있으면 name으로 필터링
+    // - 둘 다 없으면 전체 Route 반환
+    const whereOption: Record<string, any> = {};
+
+    if (routeIds) {
+      whereOption.id = In(routeIds);
+    }
+
+    if (!routeIds && searchText) {
+      whereOption.name = Like(`%${searchText}%`);
+    }
+
     const routes = await this.routeRepository.find({
-      where: {
-        id: In(routeIds),
-        name: searchText ? Like(`%${searchText}%`) : undefined,
-      },
+      where: whereOption,
       relations: ['routePlaces', 'routePlaces.place', 'tags', 'member'],
+      order: { routePlaces: { position: 'ASC' } },
     });
 
-    return routes.map((route) => {
-      route.routePlaces = route.routePlaces.sort(
-        (a, b) => a.position - b.position,
-      );
-      return this.toRouteResponseDto(route);
-    });
+    return Promise.all(
+      routes.map(async (route) => {
+        const places = await Promise.all(
+          route.routePlaces.map((rp) =>
+            this.placeService.getPlaceDetails(rp.place.id),
+          ),
+        );
+        return this.toRouteResponseDto(route, places);
+      }),
+    );
   }
 
   async findRoute(id: number): Promise<RouteResponseDto> {
+    console.log('findRoute');
     const route = await this.routeRepository.findOne({
       where: { id },
       relations: ['routePlaces', 'routePlaces.place', 'tags', 'member'],
+      order: { routePlaces: { position: 'ASC' } },
     });
 
     if (!route) {
       throw new NotFoundException('Route not found');
     }
 
-    route.routePlaces = [...route.routePlaces].sort(
-      (a, b) => a.position - b.position,
+    const places = await Promise.all(
+      route.routePlaces.map((rp) =>
+        this.placeService.getPlaceDetails(rp.place.id),
+      ),
     );
 
-    return this.toRouteResponseDto(route);
+    return this.toRouteResponseDto(route, places);
   }
 
   async update(id: number, updateRouteDto: UpdateRouteDto) {
+    console.log('update');
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -219,6 +262,7 @@ export class RouteService {
   }
 
   async remove(id: number) {
+    console.log('remove');
     const route = await this.routeRepository.findOne({
       where: { id },
     });
@@ -230,16 +274,12 @@ export class RouteService {
     await this.routeRepository.delete(id);
   }
 
-  private toRouteResponseDto(route: Route): RouteResponseDto {
-    const sortedRoutePlaces = [...route.routePlaces].sort(
-      (a, b) => a.position - b.position,
-    );
-
-    const places = plainToInstance(
+  private toRouteResponseDto(route: Route, places: Place[]): RouteResponseDto {
+    const placesDtos = plainToInstance(
       PlaceResponseDto,
-      sortedRoutePlaces.map((rp) => ({
-        ...rp.place,
-        position: rp.position,
+      places.map((place, idx) => ({
+        ...place,
+        position: route.routePlaces[idx].position,
       })),
     );
 
@@ -247,7 +287,7 @@ export class RouteService {
       name: route.name,
       memberName: route.member.name,
       tags: route.tags.map((tag) => tag.name),
-      places,
+      places: placesDtos,
       createdAt: route.createdAt,
       updatedAt: route.updatedAt,
     });

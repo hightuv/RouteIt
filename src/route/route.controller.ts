@@ -27,7 +27,7 @@ export class RouteController {
     @Query('tagIds') tagIds?: string,
   ) {
     const tagIdArray = tagIds ? tagIds.split(',').map(Number) : undefined;
-    return this.routeService.findBySearchText(searchText, tagIdArray);
+    return this.routeService.findRoutes(searchText, tagIdArray);
   }
 
   @Get(':id')
