@@ -28,11 +28,8 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/typeorm": "^11.0.0",
     "axios": "^1.9.0",
-<<<<<<< HEAD
     "cache-manager": "^6.4.3",
-=======
     "bcrypt": "^6.0.0",
->>>>>>> 4dba81b (🛠️ chore: local changes before pulling upstream main)
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "mysql2": "^3.14.1",
