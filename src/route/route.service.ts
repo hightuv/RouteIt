@@ -3,7 +3,7 @@ import { CreateRouteDto } from './dto/create-route.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Route } from './entities/route.entity';
-import { In, Like, Repository } from 'typeorm';
+import { DataSource, In, Like, Repository } from 'typeorm';
 import { Member } from 'src/member/entities/member.entity';
 import { Tag } from 'src/tag/entities/tag.entity';
 import { RouteResponseDto } from './dto/route-response.dto';
@@ -15,6 +15,8 @@ import { PlaceService } from 'src/place/place.service';
 @Injectable()
 export class RouteService {
   constructor(
+    private readonly dataSource: DataSource,
+
     @InjectRepository(Route)
     private readonly routeRepository: Repository<Route>,
 
@@ -31,54 +33,84 @@ export class RouteService {
   ) {}
 
   async create(createRouteDto: CreateRouteDto) {
-    const { name, placeIds, tagIds, isPublic, memberId } = createRouteDto;
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // 나중에는 인증 관련 절차로 변경
-    const member = await this.memberRepository.findOne({
-      where: { id: memberId },
-    });
+    try {
+      const { name, placeIds, tagIds, isPublic, memberId } = createRouteDto;
 
-    if (!member) {
-      throw new NotFoundException('Member not found');
-    }
-
-    const places = await Promise.all(
-      placeIds.map((placeId) => this.placeService.getPlaceDetails(placeId)),
-    );
-
-    const tags = await this.tagRepository.find({
-      where: { id: In(tagIds) },
-    });
-
-    if (tags.length !== tagIds.length) {
-      throw new NotFoundException('Some tags not found');
-    }
-
-    const route = this.routeRepository.create({
-      name,
-      member,
-      tags,
-      isPublic,
-    });
-    await this.routeRepository.save(route);
-
-    const routePlaces = placeIds.map((placeId, idx) => {
-      const place = places.find((p) => p.id === placeId); // placeId 갱신 관련 이슈 + transaction 원자성 이슈
-      return this.routePlaceRepository.create({
-        route,
-        place, // undefined (route정보에 undefined)
-        position: idx + 1,
+      const member = await queryRunner.manager.findOne(Member, {
+        where: { id: memberId },
       });
-    });
 
-    await this.routePlaceRepository.save(routePlaces);
+      // 나중에는 인증 관련 절차로 변경
+
+      if (!member) {
+        throw new NotFoundException('Member not found');
+      }
+
+      const places = await Promise.all(
+        placeIds.map((placeId) =>
+          this.placeService.getPlaceDetails(placeId, queryRunner.manager),
+        ),
+      );
+
+      const tags = await queryRunner.manager.find(Tag, {
+        where: { id: In(tagIds) },
+      });
+
+      if (tags.length !== tagIds.length) {
+        throw new NotFoundException('Some tags not found');
+      }
+
+      const route = queryRunner.manager.create(Route, {
+        name,
+        member,
+        tags,
+        isPublic,
+      });
+
+      await queryRunner.manager.save(route);
+
+      // getPlaceDetails는 항상 갱신된 placeId를 보장
+      const routePlaces = places.map((place, idx) => {
+        return queryRunner.manager.create(RoutePlace, {
+          route,
+          place, // 항상 최신 placeId
+          position: idx + 1,
+        });
+      });
+
+      await queryRunner.manager.save(routePlaces);
+
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   // 검색어 및 태그 (지금은 검색어만 구현)
-  async findAll(searchText: string): Promise<RouteResponseDto[]> {
+  async findBySearchText(
+    searchText?: string,
+    tagIds?: number[],
+  ): Promise<RouteResponseDto[]> {
+    // 1. tagIds에 해당하는 Route id만 먼저 조회
+    const routeIds = await this.routeRepository
+      .createQueryBuilder('route')
+      .leftJoin('route.tags', 'tag')
+      .where('tag.id IN (:...tagIds)', { tagIds })
+      .getMany()
+      .then((routes) => routes.map((r) => r.id));
+
+    // 2. 해당 Route id로 전체 태그 포함 조회
     const routes = await this.routeRepository.find({
       where: {
-        name: Like(`%${searchText}%`),
+        id: In(routeIds),
+        name: searchText ? Like(`%${searchText}%`) : undefined,
       },
       relations: ['routePlaces', 'routePlaces.place', 'tags', 'member'],
     });
@@ -91,7 +123,7 @@ export class RouteService {
     });
   }
 
-  async findOne(id: number): Promise<RouteResponseDto> {
+  async findRoute(id: number): Promise<RouteResponseDto> {
     const route = await this.routeRepository.findOne({
       where: { id },
       relations: ['routePlaces', 'routePlaces.place', 'tags', 'member'],
@@ -109,58 +141,80 @@ export class RouteService {
   }
 
   async update(id: number, updateRouteDto: UpdateRouteDto) {
-    const route = await this.routeRepository.findOne({
-      where: { id },
-      relations: ['routePlaces', 'tags', 'member'],
-    });
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    if (!route) {
-      throw new NotFoundException('Route not found');
-    }
-
-    if (updateRouteDto.name !== undefined) {
-      route.name = updateRouteDto.name;
-    }
-
-    if (updateRouteDto.isPublic !== undefined) {
-      route.isPublic = updateRouteDto.isPublic;
-    }
-
-    if (updateRouteDto.tagIds) {
-      const tags = await this.tagRepository.find({
-        where: { id: In(updateRouteDto.tagIds) },
+    try {
+      // 1. Route 조회
+      const route = await queryRunner.manager.findOne(Route, {
+        where: { id },
+        relations: ['routePlaces', 'tags', 'member'],
       });
-
-      if (tags.length !== updateRouteDto.tagIds.length) {
-        throw new NotFoundException('Some tags not found');
+      if (!route) {
+        throw new NotFoundException('Route not found');
       }
 
-      route.tags = tags;
-    }
-
-    if (updateRouteDto.placeIds) {
-      await this.routePlaceRepository.delete({ route: { id: route.id } });
-
-      const places = await Promise.all(
-        updateRouteDto.placeIds.map((placeId) =>
-          this.placeService.getPlaceDetails(placeId),
-        ),
-      );
-
-      if (places.length !== updateRouteDto.placeIds.length) {
-        throw new NotFoundException('Some places not found');
+      // 2. 필드 변경
+      if (updateRouteDto.name !== undefined) {
+        route.name = updateRouteDto.name;
       }
 
-      const newRoutePlaces = updateRouteDto.placeIds.map((placeId, idx) => {
-        const place = places.find((p) => p.id === placeId);
-        return this.routePlaceRepository.create({
-          route,
-          place,
-          position: idx + 1,
+      if (updateRouteDto.isPublic !== undefined) {
+        route.isPublic = updateRouteDto.isPublic;
+      }
+
+      // 3. 태그 변경
+      if (updateRouteDto.tagIds) {
+        const tags = await queryRunner.manager.find(Tag, {
+          where: { id: In(updateRouteDto.tagIds) },
         });
-      });
 
-      await this.routePlaceRepository.save(newRoutePlaces);
+        if (tags.length !== updateRouteDto.tagIds.length) {
+          throw new NotFoundException('Some tags not found');
+        }
+
+        route.tags = tags;
+      }
+
+      // 4. Route 수정사항 반영
+      await queryRunner.manager.save(route);
+
+      // 5. Route-Place 관계 변경
+      if (updateRouteDto.placeIds) {
+        await queryRunner.manager.delete(RoutePlace, {
+          route: { id: route.id },
+        });
+
+        // getPlaceDetails는 항상 갱신된 placeId를 보장
+        const places = await Promise.all(
+          updateRouteDto.placeIds.map((placeId) =>
+            this.placeService.getPlaceDetails(placeId, queryRunner.manager),
+          ),
+        );
+
+        if (places.length !== updateRouteDto.placeIds.length) {
+          throw new NotFoundException('Some places not found');
+        }
+
+        const newRoutePlaces = places.map((place, idx) => {
+          return queryRunner.manager.create(RoutePlace, {
+            route,
+            place, // 최신 placeId가 반영됨
+            position: idx + 1,
+          });
+        });
+
+        await queryRunner.manager.save(RoutePlace, newRoutePlaces);
+      }
+      // 커밋
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      // 롤백
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
     }
   }
 
