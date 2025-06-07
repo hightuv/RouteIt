@@ -1,18 +1,15 @@
 import { Controller, Post, Body } from '@nestjs/common';
-import { MemberService } from './member.service';
 import { LoginRequestDto } from './dto/login-request.dto';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { AuthService } from './auth.service';
+import { LoginResponseDto } from './dto/login-response.dto';
 
 @Controller()
 export class AuthController {
-  constructor(
-    private readonly memberService: MemberService,
-    private readonly authService: AuthService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('login')
-  login(@Body() loginRequestDto: LoginRequestDto) {
+  login(@Body() loginRequestDto: LoginRequestDto): Promise<LoginResponseDto> {
     return this.authService.login(loginRequestDto);
   }
 
