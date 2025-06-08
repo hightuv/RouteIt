@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { MemberModule } from './member.module';
@@ -15,7 +15,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         signOptions: { expiresIn: '1h' },
       }),
     }),
-    forwardRef(() => MemberModule),
+    MemberModule,
   ],
   providers: [AuthService],
   exports: [AuthService, JwtModule],
