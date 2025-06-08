@@ -1,7 +1,7 @@
-import { MemberRouteResponseDto } from './member-route-response.dto';
+import { Route } from 'src/route/entities/route.entity';
 
 export class MemberResponseDto {
   email: string;
   name: string;
-  route: MemberRouteResponseDto[];
+  route: Route[];
 }
