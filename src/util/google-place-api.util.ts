@@ -1,11 +1,12 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { PlaceResponseDto } from '../place/dto/place-response.dto';
 import { plainToInstance } from 'class-transformer';
+import { GooglePlaceResponseDto } from 'src/place/dto/google-place-response.dto';
 
 // 검색어에 해당하는 장소 검색 함수
 export async function searchPlacesFromGoogle(
   searchText: string,
-): Promise<unknown> {
+): Promise<GooglePlaceResponseDto[]> {
   const url = 'https://places.googleapis.com/v1/places:searchText';
   const headers = getGoogleHeaders(
     'places.id,places.displayName,places.formattedAddress',
@@ -16,8 +17,9 @@ export async function searchPlacesFromGoogle(
   };
 
   try {
-    const response = await axios.post(url, data, { headers });
-    return response.data;
+    const response: AxiosResponse<{ places: GooglePlaceResponseDto[] }> =
+      await axios.post(url, data, { headers });
+    return response.data.places;
   } catch (error) {
     console.error('Google 장소 검색 실패:', error);
     throw new Error('장소 검색 중 문제가 발생했습니다.');
