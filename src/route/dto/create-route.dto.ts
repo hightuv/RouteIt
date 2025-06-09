@@ -16,5 +16,5 @@ export class CreateRouteDto {
   isPublic: boolean;
 
   @IsNumber()
-  memberId: number;
+  userId: number;
 }

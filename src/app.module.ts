@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
-import { MemberModule } from './member/member.module';
+import { UserModule } from './member/user.module';
 import { PlaceModule } from './place/place.module';
 import { RouteModule } from './route/route.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -21,7 +21,7 @@ import { CacheModule } from '@nestjs/cache-manager';
       }),
     }),
     DatabaseModule,
-    MemberModule,
+    UserModule,
     PlaceModule,
     RouteModule,
     TagModule,

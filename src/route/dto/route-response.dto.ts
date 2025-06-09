@@ -8,7 +8,7 @@ export class RouteResponseDto {
   name: string;
 
   @IsString()
-  memberName: string;
+  username: string;
 
   @Type(() => PlaceResponseDto)
   places: PlaceResponseDto[]; // 추후 PlaceResponseDto로 변환

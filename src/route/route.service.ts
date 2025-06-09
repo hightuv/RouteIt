@@ -4,7 +4,7 @@ import { UpdateRouteDto } from './dto/update-route.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Route } from './entities/route.entity';
 import { DataSource, In, Like, Repository } from 'typeorm';
-import { Member } from 'src/member/entities/member.entity';
+import { User } from 'src/user/entities/user.entity';
 import { Tag } from 'src/tag/entities/tag.entity';
 import { RouteResponseDto } from './dto/route-response.dto';
 import { RoutePlace } from './entities/route-place.entity';
@@ -24,8 +24,8 @@ export class RouteService {
     @InjectRepository(RoutePlace)
     private readonly routePlaceRepository: Repository<RoutePlace>,
 
-    @InjectRepository(Member)
-    private readonly memberRepository: Repository<Member>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
 
     @InjectRepository(Tag)
     private readonly tagRepository: Repository<Tag>,
@@ -40,16 +40,16 @@ export class RouteService {
     await queryRunner.startTransaction();
 
     try {
-      const { name, placeIds, tagIds, isPublic, memberId } = createRouteDto;
+      const { name, placeIds, tagIds, isPublic, userId } = createRouteDto;
 
-      const member = await queryRunner.manager.findOne(Member, {
-        where: { id: memberId },
+      const user = await queryRunner.manager.findOne(User, {
+        where: { id: userId },
       });
 
       // 나중에는 인증 관련 절차로 변경
 
-      if (!member) {
-        throw new NotFoundException('Member not found');
+      if (!user) {
+        throw new NotFoundException('User not found');
       }
 
       const places = await Promise.all(
@@ -68,7 +68,7 @@ export class RouteService {
 
       const route = queryRunner.manager.create(Route, {
         name,
-        member,
+        user,
         tags,
         isPublic,
       });
@@ -145,7 +145,7 @@ export class RouteService {
 
     const routes = await this.routeRepository.find({
       where: whereOption,
-      relations: ['routePlaces', 'routePlaces.place', 'tags', 'member'],
+      relations: ['routePlaces', 'routePlaces.place', 'tags', 'user'],
       order: { routePlaces: { position: 'ASC' } },
     });
 
@@ -165,7 +165,7 @@ export class RouteService {
     console.log('findRoute');
     const route = await this.routeRepository.findOne({
       where: { id },
-      relations: ['routePlaces', 'routePlaces.place', 'tags', 'member'],
+      relations: ['routePlaces', 'routePlaces.place', 'tags', 'user'],
       order: { routePlaces: { position: 'ASC' } },
     });
 
@@ -192,7 +192,7 @@ export class RouteService {
       // 1. Route 조회
       const route = await queryRunner.manager.findOne(Route, {
         where: { id },
-        relations: ['routePlaces', 'tags', 'member'],
+        relations: ['routePlaces', 'tags', 'user'],
       });
       if (!route) {
         throw new NotFoundException('Route not found');
@@ -285,7 +285,7 @@ export class RouteService {
 
     return plainToInstance(RouteResponseDto, {
       name: route.name,
-      memberName: route.member.name,
+      username: route.user.username,
       tags: route.tags.map((tag) => tag.name),
       places: placesDtos,
       createdAt: route.createdAt,
