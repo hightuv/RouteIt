@@ -2,12 +2,13 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
-import { UserModule } from './member/user.module';
+import { UserModule } from './user/user.module';
 import { PlaceModule } from './place/place.module';
 import { RouteModule } from './route/route.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TagModule } from './tag/tag.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { CacheModule } from '@nestjs/cache-manager';
     PlaceModule,
     RouteModule,
     TagModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
