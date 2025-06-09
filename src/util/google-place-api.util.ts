@@ -5,13 +5,15 @@ import { GooglePlaceResponseDto } from 'src/place/dto/google-place-response.dto'
 import {
   GOOGLE_FIELDS_SEARCH,
   GOOGLE_FIELDS_DETAILS,
+  GOOGLE_SEARCH_URL,
+  GOOGLE_PLACE_DETAILS_URL,
 } from '../constant/place.constant';
 
 // 검색어에 해당하는 장소 검색 함수
 export async function searchPlacesFromGoogle(
   searchText: string,
 ): Promise<GooglePlaceResponseDto[]> {
-  const url = 'https://places.googleapis.com/v1/places:searchText';
+  const url = GOOGLE_SEARCH_URL;
   const headers = getGoogleHeaders(GOOGLE_FIELDS_SEARCH);
   const data = {
     textQuery: searchText,
@@ -32,8 +34,7 @@ export async function searchPlacesFromGoogle(
 export async function fetchPlaceDetailsFromGoogle(
   id: string,
 ): Promise<PlaceResponseDto> {
-  const url = `https://places.googleapis.com/v1/places/${id}?languageCode=ko`;
-
+  const url = `${GOOGLE_PLACE_DETAILS_URL}${id}?languageCode=ko`;
   const headers = getGoogleHeaders(GOOGLE_FIELDS_DETAILS);
 
   try {
