@@ -8,6 +8,7 @@ import { RouteModule } from './route/route.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TagModule } from './tag/tag.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { AuthModule } from './member/auth.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { CacheModule } from '@nestjs/cache-manager';
         max: parseInt(configService.get('CACHE_MAX', '1000'), 10),
       }),
     }),
+    AuthModule,
     DatabaseModule,
     MemberModule,
     PlaceModule,
