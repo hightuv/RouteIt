@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -13,33 +13,39 @@ export class UserService {
 
   // 사용자 생성
   async create(createUserDto: CreateUserDto): Promise<User> {
+    const { username } = createUserDto;
+
+    const existingUser = await this.findByUsername(username);
+
+    if (existingUser) {
+      throw new ConflictException('Username already exists');
+    }
+
     const user = this.userRepository.create(createUserDto);
-    return this.userRepository.save(user);
+    return await this.userRepository.save(user);
   }
 
-  // 이메일 존재 여부 확인
-  async existByEmail(email: string): Promise<boolean> {
-    const count = await this.userRepository.count({ where: { email } });
-    return count > 0;
+  // 사용자 정보 조회
+  async findByUsername(username: string) {
+    const user = await this.userRepository.findOne({
+      where: { username },
+      select: ['id', 'username', 'email', 'password'],
+    });
+    return user;
   }
 
-  // 이메일 사용자 조회 (로그인 시 password가 필요한 경우)
-  async findOneByEmailWithPassword(
-    email: string,
-  ): Promise<Pick<User, 'id' | 'email' | 'password'> | null> {
-    return this.userRepository
-      .createQueryBuilder('user')
-      .addSelect('user.password')
-      .where('user.email = :email', { email })
-      .getOne();
+  async findOne(id: number) {
+    return this.userRepository.findOne({
+      where: { id },
+      select: ['id', 'username', 'email', 'name', 'refreshToken'],
+      relations: ['routes'],
+    });
   }
 
-  async findOneByEmail(email: string): Promise<User | null> {
-    return this.userRepository
-      .createQueryBuilder('user')
-      .leftJoinAndSelect('user.routes', 'route')
-      .select(['user.email', 'route'])
-      .where('user.email = :email', { email })
-      .getOne();
+  async updateHashedRefreshToken(userId: number, hashedRefreshToken: string | null) {
+    return await this.userRepository.update(
+      { id: userId },
+      { refreshToken: hashedRefreshToken },
+    );
   }
 }
