@@ -21,6 +21,7 @@ import { AuthModule } from './auth/auth.module';
         max: parseInt(configService.get('CACHE_MAX', '1000'), 10),
       }),
     }),
+    AuthModule,
     DatabaseModule,
     UserModule,
     PlaceModule,

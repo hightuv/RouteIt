@@ -7,13 +7,11 @@ export class PlaceController {
 
   @Get()
   async searchPlaces(@Query('search') search: string) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.placeService.searchPlaces(search);
   }
 
   @Get(':id')
   async getPlaceDetails(@Param('id') id: string) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.placeService.getPlaceDetails(id);
   }
 }
