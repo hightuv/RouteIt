@@ -10,10 +10,7 @@ import { User } from 'src/user/entities/user.entity';
 import { PlaceModule } from 'src/place/place.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Route, RoutePlace, Place, Tag, User]),
-    PlaceModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Route, RoutePlace, Place, Tag, User]), PlaceModule],
   controllers: [RouteController],
   providers: [RouteService],
 })

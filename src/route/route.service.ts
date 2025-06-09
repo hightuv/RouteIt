@@ -96,10 +96,7 @@ export class RouteService {
   }
 
   // 검색어 및 태그 (지금은 검색어만 구현)
-  async findRoutes(
-    searchText?: string,
-    tagIds?: number[],
-  ): Promise<RouteResponseDto[]> {
+  async findRoutes(searchText?: string, tagIds?: number[]): Promise<RouteResponseDto[]> {
     console.log('findRoutes');
     // 1. routeIds: tagIds가 있을 때만 Route-Tag 조인으로 id 추출, 없으면 undefined
     let routeIds: number[] | undefined = undefined;
@@ -152,9 +149,7 @@ export class RouteService {
     return Promise.all(
       routes.map(async (route) => {
         const places = await Promise.all(
-          route.routePlaces.map((rp) =>
-            this.placeService.getPlaceDetails(rp.place.id),
-          ),
+          route.routePlaces.map((rp) => this.placeService.getPlaceDetails(rp.place.id)),
         );
         return this.toRouteResponseDto(route, places);
       }),
@@ -174,9 +169,7 @@ export class RouteService {
     }
 
     const places = await Promise.all(
-      route.routePlaces.map((rp) =>
-        this.placeService.getPlaceDetails(rp.place.id),
-      ),
+      route.routePlaces.map((rp) => this.placeService.getPlaceDetails(rp.place.id)),
     );
 
     return this.toRouteResponseDto(route, places);
