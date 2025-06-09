@@ -2,15 +2,17 @@ import axios, { AxiosResponse } from 'axios';
 import { PlaceResponseDto } from '../place/dto/place-response.dto';
 import { plainToInstance } from 'class-transformer';
 import { GooglePlaceResponseDto } from 'src/place/dto/google-place-response.dto';
+import {
+  GOOGLE_FIELDS_SEARCH,
+  GOOGLE_FIELDS_DETAILS,
+} from '../constant/place.constant';
 
 // 검색어에 해당하는 장소 검색 함수
 export async function searchPlacesFromGoogle(
   searchText: string,
 ): Promise<GooglePlaceResponseDto[]> {
   const url = 'https://places.googleapis.com/v1/places:searchText';
-  const headers = getGoogleHeaders(
-    'places.id,places.displayName,places.formattedAddress',
-  );
+  const headers = getGoogleHeaders(GOOGLE_FIELDS_SEARCH);
   const data = {
     textQuery: searchText,
     languageCode: 'ko',
@@ -32,20 +34,7 @@ export async function fetchPlaceDetailsFromGoogle(
 ): Promise<PlaceResponseDto> {
   const url = `https://places.googleapis.com/v1/places/${id}?languageCode=ko`;
 
-  const headers = getGoogleHeaders(
-    [
-      'id',
-      'displayName.text',
-      'formattedAddress',
-      'primaryTypeDisplayName',
-      'photos',
-      'regularOpeningHours.weekdayDescriptions',
-      'rating',
-      'reviews',
-      'userRatingCount',
-      'nationalPhoneNumber',
-    ].join(','),
-  );
+  const headers = getGoogleHeaders(GOOGLE_FIELDS_DETAILS);
 
   try {
     const response = await axios.get(url, { headers });
@@ -56,6 +45,7 @@ export async function fetchPlaceDetailsFromGoogle(
   }
 }
 
+// 구글 API 호출 시 필요한 헤더 반환 함수
 function getGoogleHeaders(fieldmask: string) {
   const apiKey = process.env.GOOGLE_API_KEY;
   if (!apiKey) {
