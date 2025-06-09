@@ -57,9 +57,13 @@ export async function fetchPlaceDetailsFromGoogle(
 }
 
 function getGoogleHeaders(fieldmask: string) {
+  const apiKey = process.env.GOOGLE_API_KEY;
+  if (!apiKey) {
+    throw new Error('GOOGLE_API_KEY가 설정되어 있지 않습니다.');
+  }
   return {
     'Content-Type': 'application/json',
-    'X-Goog-Api-Key': process.env.GOOGLE_API_KEY,
+    'X-Goog-Api-Key': apiKey,
     'X-Goog-FieldMask': fieldmask,
   };
 }
