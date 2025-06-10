@@ -1,4 +1,4 @@
-import { Member } from 'src/member/entities/member.entity';
+import { User } from 'src/user/entities/user.entity';
 import { Tag } from 'src/tag/entities/tag.entity';
 import {
   Column,
@@ -21,8 +21,8 @@ export class Route {
   @Column()
   name: string;
 
-  @ManyToOne(() => Member, (member) => member.routes)
-  member: Member;
+  @ManyToOne(() => User, (user) => user.routes)
+  user: User;
 
   @OneToMany(() => RoutePlace, (routePlace) => routePlace.route)
   routePlaces: RoutePlace[];

@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { RouteService } from './route.service';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
@@ -22,10 +13,7 @@ export class RouteController {
   }
 
   @Get()
-  findRoutes(
-    @Query('searchText') searchText?: string,
-    @Query('tagIds') tagIds?: string,
-  ) {
+  findRoutes(@Query('searchText') searchText?: string, @Query('tagIds') tagIds?: string) {
     const tagIdArray = tagIds ? tagIds.split(',').map(Number) : undefined;
     return this.routeService.findRoutes(searchText, tagIdArray);
   }

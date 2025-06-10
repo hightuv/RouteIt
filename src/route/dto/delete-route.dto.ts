@@ -1,3 +1,3 @@
 export class DeleteRouteDto {
-  memberId: number;
+  username: string;
 }
