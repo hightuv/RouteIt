@@ -38,7 +38,15 @@ export class UserService {
     return this.userRepository.findOne({
       where: { id },
       select: ['id', 'username', 'email', 'name', 'refreshToken'],
-      relations: ['routes'],
+      relations: {
+        routes: {
+          routePlaces: {
+            place: true,
+          },
+          tags: true,
+          user: true,
+        },
+      },
     });
   }
 

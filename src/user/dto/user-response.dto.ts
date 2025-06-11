@@ -1,22 +1,19 @@
 import { Expose, Type } from 'class-transformer';
-import { Route } from 'src/route/entities/route.entity';
+import { ValidateNested } from 'class-validator';
+import { UserSummaryDto } from './user-summary.dto';
+import { RouteSummaryDto } from 'src/route/dto/route-summary.dto';
 
-export class UserResponseDto {
+export class UserResponseDto extends UserSummaryDto {
   @Expose()
-  id: number;
-
-  @Expose()
-  username: string;
+  username: string; // 아이디
 
   @Expose()
   email: string;
 
   @Expose()
-  name: string;
-
-  @Expose()
-  @Type(() => Route)
-  routes?: Route[];
+  @ValidateNested({ each: true })
+  @Type(() => RouteSummaryDto)
+  routes?: RouteSummaryDto[];
 
   refreshToken?: string;
 }
