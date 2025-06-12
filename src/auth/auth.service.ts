@@ -6,6 +6,7 @@ import { AuthJwtPayload } from './types/auth-jwtPayload';
 import refreshJwtConfig from './config/refresh-jwt.config';
 import { ConfigType } from '@nestjs/config';
 import * as argon2 from 'argon2';
+import Redis from 'ioredis';
 
 @Injectable()
 export class AuthService {
@@ -14,22 +15,33 @@ export class AuthService {
     private readonly jwtService: JwtService,
     @Inject(refreshJwtConfig.KEY)
     private readonly refreshTokenConfig: ConfigType<typeof refreshJwtConfig>,
+    @Inject('REDIS_TOKEN_CLIENT') // Redis 클라이언트 주입
+    private readonly redisClient: Redis,
   ) {}
 
   async login(userId: number) {
     const { accessToken, refreshToken } = await this.generateTokens(userId);
-    // bcrypt는 token과 같이 긴 문자열을 해싱하는데 제한됨
-    // 따라서 Argon2 사용 예정
+
+    // Argon2로 refreshToken 해싱
     const hashedRefreshToken = await argon2.hash(refreshToken);
+
+    // DB에 해싱된 refreshToken 저장
     await this.userService.updateHashedRefreshToken(userId, hashedRefreshToken);
 
+    const key = `userId:${userId}:refreshToken`;
+
+    // Redis에도 저장
+    await this.redisClient.setex(
+      key,
+      Number(process.env.REFRESH_CACHE_EXPIRED_IN),
+      refreshToken,
+    );
     return {
       id: userId,
       accessToken,
       refreshToken,
     };
   }
-
   async logout(userId: number) {
     await this.userService.updateHashedRefreshToken(userId, null);
 
@@ -83,13 +95,13 @@ export class AuthService {
   }
 
   async validateRefreshToken(userId: number, refreshToken: string) {
-    const user = await this.userService.findOne(userId);
+    const hashedRefreshToken = await this.userService.getHashedRefreshToken(userId);
 
-    if (!user || !user.refreshToken) {
+    if (!hashedRefreshToken) {
       throw new UnauthorizedException('Invalid Refresh Token');
     }
 
-    const isRefreshTokenValid = await argon2.verify(user.refreshToken, refreshToken); // 서버에 저장된 해시된 토큰 vs 사용자가 보낸 토큰
+    const isRefreshTokenValid = await argon2.verify(hashedRefreshToken, refreshToken);
 
     if (!isRefreshTokenValid) {
       throw new UnauthorizedException('Invalid Refresh Token');
