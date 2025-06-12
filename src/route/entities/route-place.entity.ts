@@ -10,6 +10,9 @@ export class RoutePlace {
   @ManyToOne(() => Route, (route) => route.routePlaces, { onDelete: 'CASCADE' })
   route: Route;
 
+  @Column()
+  placeId: string;
+
   @ManyToOne(() => Place, (place) => place.routePlaces, { onDelete: 'CASCADE' })
   place: Place;
 

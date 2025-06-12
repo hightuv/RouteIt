@@ -1,25 +1,11 @@
-import { Type } from 'class-transformer';
-import { IsDate, IsString, ValidateNested } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import { ValidateNested } from 'class-validator';
 import { PlaceResponseDto } from 'src/place/dto/place-response.dto';
-import { TagResponseDto } from 'src/tag/dto/tag-response.dto';
+import { RouteSummaryDto } from './route-summary.dto';
 
-export class RouteResponseDto {
-  @IsString()
-  name: string;
-
-  @IsString()
-  username: string;
-
-  @Type(() => PlaceResponseDto)
-  places: PlaceResponseDto[]; // 추후 PlaceResponseDto로 변환
-
+export class RouteResponseDto extends RouteSummaryDto {
+  @Expose()
   @ValidateNested({ each: true })
-  @Type(() => TagResponseDto)
-  tags: TagResponseDto[];
-
-  @IsDate()
-  createdAt: Date;
-
-  @IsDate()
-  updatedAt: Date;
+  @Type(() => PlaceResponseDto)
+  places: PlaceResponseDto[];
 }

@@ -41,8 +41,16 @@ export class UserService {
   async findOne(id: number) {
     return this.userRepository.findOne({
       where: { id },
-      select: ['id', 'username', 'email', 'name', 'refreshToken'], // refreshToken 반환이유
-      relations: ['routes'],
+      select: ['id', 'username', 'email', 'name', 'refreshToken'],
+      relations: {
+        routes: {
+          routePlaces: {
+            place: true,
+          },
+          tags: true,
+          user: true,
+        },
+      },
     });
   }
 
