@@ -1,6 +1,7 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { Inject, Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import Redis from 'ioredis';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 
@@ -9,6 +10,9 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
+    @Inject('REDIS_TOKEN_CLIENT')
+    private readonly redisClient: Redis,
   ) {}
 
   // 사용자 생성
@@ -51,9 +55,21 @@ export class UserService {
   }
 
   async updateHashedRefreshToken(userId: number, hashedRefreshToken: string | null) {
-    return await this.userRepository.update(
-      { id: userId },
-      { refreshToken: hashedRefreshToken },
-    );
+    const key = `userId:${userId}:refreshToken`;
+    if (hashedRefreshToken) {
+      // Redis 캐시 업데이트 (유효기간 1일)
+      await this.redisClient.setex(
+        key,
+        Number(process.env.REFRESH_CACHE_EXPIRED_IN),
+        hashedRefreshToken,
+      );
+    } else {
+      await this.redisClient.del(key);
+    }
+  }
+
+  async getHashedRefreshToken(userId: number): Promise<string | null> {
+    const key = `refresh_token:${userId}`;
+    return await this.redisClient.get(key);
   }
 }

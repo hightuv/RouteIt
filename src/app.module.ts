@@ -27,7 +27,6 @@ import { AuthModule } from './auth/auth.module';
     PlaceModule,
     RouteModule,
     TagModule,
-    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
